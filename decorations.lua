@@ -6,7 +6,6 @@ local emptynodes = {
 }
 
 local function generateDecoSimple(deco, vm, pr, p, ceiling)
-	print(deco.name, minetest.pos_to_string(p))
 	local emin, emax = vm:get_emerged_area()
 
 	local place_offset_y = deco.place_offset_y
@@ -64,7 +63,6 @@ local function get_schematic_size(schem)
 end
 
 local function generateDecoSchematic(deco, vm, pr, p, ceiling)
-	print(deco.name, minetest.pos_to_string(p))
 	local force_placement = deco.flags.force_placement == true
 	local direction = ceiling and -1 or 1
 	if not deco.flags.place_center_y then

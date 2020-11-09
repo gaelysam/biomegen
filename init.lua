@@ -36,29 +36,10 @@ local c_stone
 local c_water
 local c_rwater
 
---[[local function noiseparams(name)
-	local np = minetest.get_mapgen_setting_noiseparams(name)
-	print(name)
-	print(dump2(np))
-
-	np.offset = tonumber(np.offset)
-	np.scale = tonumber(np.scale)
-	local sp = np.spread
-	sp.x = tonumber(sp.x)
-	sp.y = tonumber(sp.y)
-	sp.z = tonumber(sp.z)
-	np.seed = tonumber(np.scale)
-	np.octaves = tonumber(np.scale)
-	np.persist = tonumber(np.scale)
-	np.lacunarity = tonumber(np.scale)
-
-	return np
-end]]
-
 local biomes, decos
 
 local function initialize(chulens)
-	print("Initializing")
+	print("[biomegen] Initializing")
 
 	init = true
 
@@ -281,7 +262,6 @@ local walkable = setmetatable({}, {
 			is_walkable = true
 		end
 
-		print(ndef.name .. " walkable: " .. tostring(is_walkable))
 		t[c] = is_walkable
 		return is_walkable
 	end,
@@ -295,19 +275,15 @@ local liquid = setmetatable({}, {
 			is_liquid = ndef.liquidtype ~= "none"
 		end
 
-		print(ndef.name .. " liquid: " .. tostring(is_liquid))
 		t[c] = is_liquid
 		return is_liquid
 	end,
 })
 
 local function canPlaceDeco(deco, data, vi, pattern)
-	--print("Testing deco " .. deco.name)
 	if not deco.place_on[data[vi]] then
-		--print(deco.name, "Not the right node", minetest.get_name_from_content_id(data[vi]))
 		return false
 	elseif deco.num_spawn_by <= 0 then
-		--print("No specific parameters")
 		return true
 	end
 
@@ -318,13 +294,11 @@ local function canPlaceDeco(deco, data, vi, pattern)
 		if spawn_by[data[vi]] then
 			nneighs = nneighs - 1
 			if nneighs < 1 then
-				--print("Neighbours found")
 				return true
 			end
 		end
 	end
 
-	--print(deco.name, "Not the required neighbours")
 	return false
 end
 
@@ -507,7 +481,6 @@ local dustable = setmetatable({}, {
 			end
 		end
 
-		print(ndef.name .. " dustable: " .. tostring(is_dustable))
 		t[c] = is_dustable
 		return is_dustable
 	end,
@@ -557,7 +530,6 @@ function biomegen.dustTopNodes(vm, data, a, minp, maxp)
 				if dustable[c] and c ~= biome.node_dust then
 					local pos = {x=x, y=y+1, z=z}
 					vm:set_node_at(pos, {name=biome.node_dust_name})
-					--print(minetest.pos_to_string(pos), "Dust")
 				end
 			end
 		end
@@ -565,28 +537,3 @@ function biomegen.dustTopNodes(vm, data, a, minp, maxp)
 	end
 	end
 end
-
---[[minetest.register_on_generated(function(minp, maxp, seed)
-	if not init then
-		local chulens = {x=maxp.x-minp.x+1, y=maxp.y-minp.y+1, z=maxp.z-minp.z+1}
-		initialize(chulens)
-		for i, biome in pairs(minetest.registered_biomes) do
-			print(i)
-			print(dump2(biome))
-		end
-	end
-end)]]
-
-minetest.register_chatcommand('biome', {
-	params = "",
-	description = "Get local biome and related climate parameters",
-	privs = {},
-	func = function(name, params)
-		local player = minetest.get_player_by_name(name)
-		local pos = player:get_pos()
-		local bdata = minetest.get_biome_data(pos)
-		local biome = minetest.get_biome_name(bdata.biome)
-
-		return true, ("Biome: %s, Heat: %f, Humidity: %f"):format(biome, bdata.heat, bdata.humidity)
-	end,
-})
