@@ -492,7 +492,7 @@ local dustable = setmetatable({}, {
 	end,
 })
 
-local function dust_top_nodes(vm, data, a, minp, maxp)
+local function dust_top_nodes(data, a, vm, minp, maxp)
 	if maxp.y < water_level then
 		return
 	end
@@ -560,5 +560,5 @@ function biomegen.generate_all(data, a, vm, minp, maxp, seed)
 	place_all_decos(data, a, vm, minp, maxp, seed)
 	minetest.generate_ores(vm, minp, maxp)
 	vm:get_data(data)
-	dust_top_nodes(vm, data, a, minp, maxp)
+	dust_top_nodes(data, a, vm, minp, maxp)
 end
