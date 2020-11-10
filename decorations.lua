@@ -5,7 +5,7 @@ local emptynodes = {
 	ignore = true,
 }
 
-local function generateDecoSimple(deco, vm, pr, p, ceiling)
+local function generate_deco_simple(deco, vm, pr, p, ceiling)
 	local emin, emax = vm:get_emerged_area()
 
 	local place_offset_y = deco.place_offset_y
@@ -62,7 +62,7 @@ local function get_schematic_size(schem)
 	return {x=0, y=0, z=0}
 end
 
-local function generateDecoSchematic(deco, vm, pr, p, ceiling)
+local function generate_deco_schematic(deco, vm, pr, p, ceiling)
 	local force_placement = deco.flags.force_placement == true
 	local direction = ceiling and -1 or 1
 	if not deco.flags.place_center_y then
@@ -182,7 +182,7 @@ local function make_decolist()
 			b.param2_max = math.max(a.params2_max or b.param2, b.height)
 			b.vary_param2 = b.param2 < b.param2_max
 			b.place_offset_y = a.place_offset_y or 0
-			b.generate = generateDecoSimple
+			b.generate = generate_deco_simple
 		elseif b.deco_type == "schematic" then
 			b.schematic = a.schematic
 			b.replacements = a.replacements or {}
@@ -197,7 +197,7 @@ local function make_decolist()
 			end
 			b.schem_flags = table.concat(schem_flags, ',')
 
-			b.generate = generateDecoSchematic
+			b.generate = generate_deco_schematic
 		end
 	end
 

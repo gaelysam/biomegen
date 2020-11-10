@@ -1,7 +1,5 @@
 -- biomegen/init.lua
 
-biomegen = {}
-
 local make_biomelist = dofile(minetest.get_modpath(minetest.get_current_modname()) .. "/biomelist.lua")
 local make_decolist = dofile(minetest.get_modpath(minetest.get_current_modname()) .. "/decorations.lua")
 
@@ -24,7 +22,7 @@ local nvals_humid_blend = {}
 
 local water_level = tonumber(minetest.get_mapgen_setting('water_level'))
 local elevation_chill = 0
-function biomegen.set_elevation_chill(ec)
+local function set_elevation_chill(ec)
 	elevation_chill = ec
 end
 
@@ -68,7 +66,7 @@ local biomemap = {}
 local heatmap = {}
 local humidmap = {}
 
-function biomegen.calculateNoises(minp)
+local function calculate_noises(minp)
 	local minp2d = {x=minp.x, y=minp.z}
 	nobj_filler_depth:get_2d_map_flat(minp2d, nvals_filler_depth)
 
@@ -84,13 +82,7 @@ function biomegen.calculateNoises(minp)
 	end
 end
 
-function biomegen.getBiomeAtIndex(i, pos)
-	local heat = heatmap[i] - math.max(pos.y, water_level)*elevation_chill
-	local humid = humidmap[i]
-	return biomegen.calcBiomeFromNoise(heat, humid, pos)
-end
-
-function biomegen.calcBiomeFromNoise(heat, humid, pos)
+local function calc_biome_from_noise(heat, humid, pos)
 	local biome_closest = nil
 	local biome_closest_blend = nil
 	local dist_min = 31000
@@ -131,7 +123,13 @@ function biomegen.calcBiomeFromNoise(heat, humid, pos)
 	return biome_closest
 end
 
-function biomegen.generateBiomes(data, a, minp, maxp)
+local function get_biome_at_index(i, pos)
+	local heat = heatmap[i] - math.max(pos.y, water_level)*elevation_chill
+	local humid = humidmap[i]
+	return calc_biome_from_noise(heat, humid, pos)
+end
+
+local function generate_biomes(data, a, minp, maxp)
 	local chulens = {x=maxp.x-minp.x+1, y=maxp.y-minp.y+1, z=maxp.z-minp.z+1}
 
 	local index = 1
@@ -140,7 +138,7 @@ function biomegen.generateBiomes(data, a, minp, maxp)
 		initialize(chulens)
 	end
 
-	biomegen.calculateNoises(minp)
+	calculate_noises(minp)
 
 	for z=minp.z, maxp.z do
 	for x=minp.x, maxp.x do
@@ -180,7 +178,7 @@ function biomegen.generateBiomes(data, a, minp, maxp)
 					(air_above or not biome or y < biome_y_min)
 
 			if is_stone_surface or is_water_surface then
-				biome = biomegen.getBiomeAtIndex(index, {x=x, y=y, z=z})
+				biome = get_biome_at_index(index, {x=x, y=y, z=z})
 				biome_stone = biome.node_stone
 
 				if not biomemap[index] and is_stone_surface then
@@ -288,7 +286,7 @@ local liquid = setmetatable({}, {
 	end,
 })
 
-local function canPlaceDeco(deco, data, vi, pattern)
+local function can_place_deco(deco, data, vi, pattern)
 	if not deco.place_on[data[vi]] then
 		return false
 	elseif deco.num_spawn_by <= 0 then
@@ -310,7 +308,7 @@ local function canPlaceDeco(deco, data, vi, pattern)
 	return false
 end
 
-local function placeDeco(deco, data, a, vm, minp, maxp, blockseed)
+local function place_deco(deco, data, a, vm, minp, maxp, blockseed)
 	local ps = PcgRandom(blockseed + 53)
 	local carea_size = maxp.x - minp.x + 1
 
@@ -394,7 +392,7 @@ local function placeDeco(deco, data, a, vm, minp, maxp, blockseed)
 						for _, y in ipairs(floors) do
 							if y >= biome.y_min and y <= biome.y_max then
 								local pos = {x=x, y=y, z=z}
-								if canPlaceDeco(deco, data, vi, pattern) then
+								if can_place_deco(deco, data, vi, pattern) then
 									deco:generate(vm, ps, pos, false)
 								end
 							end
@@ -405,7 +403,7 @@ local function placeDeco(deco, data, a, vm, minp, maxp, blockseed)
 						for _, y in ipairs(ceilings) do
 							if y >= biome.y_min and y <= biome.y_max then
 								local pos = {x=x, y=y, z=z}
-								if canPlaceDeco(deco, data, vi, pattern) then
+								if can_place_deco(deco, data, vi, pattern) then
 									deco:generate(vm, ps, pos, true)
 								end
 							end
@@ -448,7 +446,7 @@ local function placeDeco(deco, data, a, vm, minp, maxp, blockseed)
 
 					if biome_ok then
 						local pos = {x=x, y=y, z=z}
-						if canPlaceDeco(deco, data, a:index(x,y,z), pattern) then
+						if can_place_deco(deco, data, a:index(x,y,z), pattern) then
 							deco:generate(vm, ps, pos, false)
 						end
 					end
@@ -461,18 +459,18 @@ local function placeDeco(deco, data, a, vm, minp, maxp, blockseed)
 	return 0
 end
 
-local function getBlockseed(p, seed)
+local function get_blockseed(p, seed)
 	return seed + p.z * 38134234 + p.y * 42123 + p.x * 23
 end
 
-function biomegen.placeAllDecos(data, a, vm, minp, maxp, seed)
+local function place_all_decos(data, a, vm, minp, maxp, seed)
 	local emin = vm:get_emerged_area()
-	local blockseed = getBlockseed(emin, seed)
+	local blockseed = get_blockseed(emin, seed)
 
 	local nplaced = 0
 
 	for i, deco in pairs(decos) do
-		nplaced = nplaced + placeDeco(deco, data, a, vm, minp, maxp, blockseed)
+		nplaced = nplaced + place_deco(deco, data, a, vm, minp, maxp, blockseed)
 	end
 
 	return nplaced
@@ -494,7 +492,7 @@ local dustable = setmetatable({}, {
 	end,
 })
 
-function biomegen.dustTopNodes(vm, data, a, minp, maxp)
+local function dust_top_nodes(vm, data, a, minp, maxp)
 	if maxp.y < water_level then
 		return
 	end
@@ -544,4 +542,23 @@ function biomegen.dustTopNodes(vm, data, a, minp, maxp)
 		index = index + 1
 	end
 	end
+end
+
+biomegen = {
+	set_elevation_chill = set_elevation_chill,
+	calculate_noises = calculate_noises,
+	get_biome_at_index = get_biome_at_index,
+	calc_biome_from_noise = calc_biome_from_noise,
+	generate_biomes = generate_biomes,
+	place_all_decos = place_all_decos,
+	dust_top_nodes = dust_top_nodes,
+}
+
+function biomegen.generate_all(data, a, vm, minp, maxp, seed)
+	generate_biomes(data, a, minp, maxp)
+	vm:set_data(data)
+	place_all_decos(data, a, vm, minp, maxp, seed)
+	minetest.generate_ores(vm, minp, maxp)
+	vm:get_data(data)
+	dust_top_nodes(vm, data, a, minp, maxp)
 end
