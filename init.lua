@@ -146,6 +146,7 @@ function biomegen.generateBiomes(data, a, minp, maxp)
 	for x=minp.x, maxp.x do
 		local biome = nil
 		local water_biome = nil
+		local biome_stone = c_stone
 
 		local depth_top = 0
 		local base_filler = 0
@@ -153,10 +154,16 @@ function biomegen.generateBiomes(data, a, minp, maxp)
 		local depth_riverbed = 0
 
 		local biome_y_min = -31000
+		local y_start = maxp.y
 		local vi = a:index(x, maxp.y, z)
 		local ystride = a.ystride
 
 		local c_above = data[vi+ystride]
+		if c_above == c_ignore then
+			y_start = y_start - 1
+			c_above = data[vi]
+			vi = vi - ystride
+		end
 		local air_above = c_above == c_air
 		local river_water_above = c_above == c_rwater
 		local water_above = c_above == c_water or river_water_above
@@ -165,7 +172,7 @@ function biomegen.generateBiomes(data, a, minp, maxp)
 
 		local nplaced = (air_above or water_above) and 0 or 31000
 
-		for y=maxp.y, minp.y, -1 do
+		for y=y_start, minp.y-1, -1 do
 			local c = data[vi]
 			local is_stone_surface = (c == c_stone) and
 					(air_above or water_above or not biome or y < biome_y_min)
@@ -174,6 +181,7 @@ function biomegen.generateBiomes(data, a, minp, maxp)
 
 			if is_stone_surface or is_water_surface then
 				biome = biomegen.getBiomeAtIndex(index, {x=x, y=y, z=z})
+				biome_stone = biome.node_stone
 
 				if not biomemap[index] and is_stone_surface then
 					biomemap[index] = biome
@@ -190,7 +198,7 @@ function biomegen.generateBiomes(data, a, minp, maxp)
 				biome_y_min = biome.min_pos.y
 			end
 
-			if c == c_stone then
+			if c == c_stone or c == biome_stone then
 				local c_below = data[vi-ystride]
 				if c_below == c_air or c_below == c_rwater or c_below == c_water then
 					nplaced = 31000
@@ -210,7 +218,7 @@ function biomegen.generateBiomes(data, a, minp, maxp)
 					data[vi] = biome.node_filler
 					nplaced = nplaced + 1
 				else
-					data[vi] = biome.node_stone
+					data[vi] = biome_stone
 					nplaced = 31000
 				end
 
@@ -508,7 +516,7 @@ function biomegen.dustTopNodes(vm, data, a, minp, maxp)
 			if c_full_max == c_air then
 				y_start = full_maxp.y - 1
 			elseif c_full_max == c_ignore then
-				vi = a:index(x, maxp.y+1, z)
+				vi = a:index(x, maxp.y, z)
 				local c_max = data[vi]
 
 				if c_max == c_air then
